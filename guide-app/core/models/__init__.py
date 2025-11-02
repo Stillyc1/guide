@@ -6,7 +6,7 @@ from .organization import Organization
 from .organization_activities_table import organization_activities_table
 from .phone_number import PhoneNumber
 
-__all_ = (
+__all__ = (
     "db_helper",
     "Base",
     "PhoneNumber",

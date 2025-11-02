@@ -1,9 +1,9 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 
 from sqlalchemy import String, Float
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from core.models import Base
+from .base import Base
 
 if TYPE_CHECKING:
     from .organization import Organization
@@ -14,17 +14,21 @@ class Building(Base):
     __tablename__ = "buildings"
 
     address: Mapped[str] = mapped_column(
-        String,
-        comment='Адрес здания'
+        String(512),
+        comment="Адрес здания",
     )
     latitude: Mapped[float] = mapped_column(
-        Float,
-        comment='Широта'
+        Float(precision=10, asdecimal=False),
+        comment="Широта",
     )
     longitude: Mapped[float] = mapped_column(
-        Float,
-        comment='Долгота'
+        Float(precision=10, asdecimal=False),
+        comment="Долгота",
     )
-    organizations: Mapped[list["Organization"]] = relationship(
-        back_populates="building"
+    organizations: Mapped[List["Organization"]] = relationship(
+        back_populates="building",
+        cascade="all, delete-orphan",
     )
+
+    def __str__(self) -> str:
+        return f"{self.address}"

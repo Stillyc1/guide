@@ -1,4 +1,4 @@
-from typing import Optional, TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING, List
 
 from sqlalchemy import String, ForeignKey, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -21,19 +21,42 @@ class Activity(Base):
     parent_id: Mapped[Optional[int]] = mapped_column(
         ForeignKey("activities.id"),
         nullable=True,
+        index=True,
     )
-    parent: Mapped["Activity"] = relationship(
-        back_populates="sub_activities",
+    parent: Mapped[Optional["Activity"]] = relationship(
+        "Activity",
+        remote_side="Activity.id",
+        back_populates="child_activities"
     )
-    level_parent: Mapped[int] = mapped_column(
+
+    child_activities: Mapped[List["Activity"]] = relationship(
+        "Activity",
+        back_populates="parent",
+        cascade="all, delete-orphan",
+    )
+    level: Mapped[int] = mapped_column(
         Integer,
         default=1,
-        comment="Уровень вложенности"
+        comment="Уровень вложенности",
+        index=True,
     )
-    sub_activities: Mapped[list["Activity"]] = relationship(
-        back_populates="parent"
-    )
-    organizations: Mapped[list["Organization"]] = relationship(
+    organizations: Mapped[List["Organization"]] = relationship(
         secondary=organization_activities_table,
         back_populates="activities",
+        lazy="selectin",
     )
+
+    def __str__(self) -> str:
+        return f"{self.name} (уровень {self.level})"
+
+    def update_levels(self, parent_level: int = 0) -> None:
+        self.level = parent_level + 1
+        for child in self.child_activities:
+            child.update_levels(self.level)
+
+    def validate_level(self) -> bool:
+        if self.level > 3:
+            return False
+        if self.parent and self.parent.level >= 3:
+            return False
+        return True
