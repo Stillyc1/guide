@@ -1,0 +1,55 @@
+services:
+  postgres:
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    ports:
+      - "5432:5432"
+    networks:
+      - guide_network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  guide:
+    build:
+      context: ./guide-app
+      dockerfile: Dockerfile
+    working_dir: /guide
+    volumes:
+      - ./guide-app:/guide
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./guide-app/.env
+    environment:
+      - GUIDE__DB__URL=${GUIDE__DB__URL}
+      - GUIDE__JWT__API_KEY=${GUIDE__JWT__API_KEY}
+      - GUIDE__JWT__ALGORITHM=${GUIDE__JWT__ALGORITHM}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: >
+      sh -c "
+      poetry run alembic upgrade head &&
+
+      echo 'Seeding initial data...' &&
+      poetry run python fixtures.py &&
+
+      echo 'Starting FastAPI application...' &&
+      poetry run uvicorn main:main_app --host 0.0.0.0 --port 8000 --reload
+      "
+    networks:
+      - guide_network
+
+networks:
+  guide_network:
+
+volumes:
+  postgres_data:
