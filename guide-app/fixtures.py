@@ -1,8 +1,10 @@
+import asyncio
 import sys
 
 from sqlalchemy import text, insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.models import db_helper
 from core.models.activity import Activity
 from core.models.building import Building
 from core.models.organization import Organization
@@ -92,3 +94,12 @@ async def reset_database(db: AsyncSession):
 
     sys.stdout.write("Тестовые данные удалены!\n")
     await db.commit()
+
+
+if __name__ == "__main__":
+    async def main():
+        async for session in db_helper.session_getter():
+            await reset_database(session)
+            await create_test_data(session)
+
+    asyncio.run(main())

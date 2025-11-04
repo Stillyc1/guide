@@ -43,7 +43,7 @@ if __name__ == "__main__":
         reload=True,
     )
 
-# uvicorn main:app --host 127.0.0.1 --reload --- "Локальный старт"
+# uvicorn main:main_app --host 127.0.0.1 --reload --- "Локальный старт"
 # alembic init -t async alembic --- "инициализация alembic async"
 # alembic revision --autogenerate -m "create Users model" --- "Создание миграций"
 # alembic upgrade head --- "Применение миграций"
