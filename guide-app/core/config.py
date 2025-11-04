@@ -1,0 +1,59 @@
+import os
+
+from dotenv import load_dotenv
+from pydantic import BaseModel, PostgresDsn
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+load_dotenv(override=True)
+
+
+class RunConfig(BaseModel):
+    """Настройки для запуска."""
+    host: str = "127.0.0.1"
+    port: int = 8000
+
+
+class JWTConfig(BaseModel):
+    """Настройки JWT-токена."""
+    api_key: str = os.getenv("GUIDE__JWT__API_KEY")
+    algorithm: str = os.getenv("GUIDE__JWT__ALGORITHM")
+
+
+class ApiPrefix(BaseModel):
+    """Настройки для префиксов."""
+    prefix: str = "/api"
+    organizations: str = "/organizations"
+
+
+class DataBaseConfig(BaseModel):
+    """Настройки базы данных."""
+    url: PostgresDsn
+    echo: bool = False
+    echo_pool: bool = False
+    pool_size: int = 50
+    max_overflow: int = 10
+
+    naming_convention: dict[str, str] = {
+        "ix": "ix_%(column_0_label)s",
+        "uq": "uq_%(table_name)s_%(column_0_name)s",
+        "ck": "ck_%(table_name)s_%(constraint_name)s",
+        "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
+        "pk": "pk_%(table_name)s",
+    }
+
+
+class Settings(BaseSettings):
+    """Общая конфигурация настроек."""
+    model_config = SettingsConfigDict(
+        env_file=(".env-sample", ".env"),
+        case_sensitive=False,
+        env_nested_delimiter="__",
+        env_prefix="GUIDE__"
+    )
+    run: RunConfig = RunConfig()
+    api: ApiPrefix = ApiPrefix()
+    db: DataBaseConfig
+    jwt: JWTConfig = JWTConfig()
+
+
+settings = Settings()
